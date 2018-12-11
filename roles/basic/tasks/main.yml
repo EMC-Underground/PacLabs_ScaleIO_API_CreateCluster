@@ -1,0 +1,95 @@
+- name: "Get ScaleIO token for Auth"
+  uri:
+    url: https://10.237.198.170/api/login 
+    return_content: yes
+    user: admin
+    password: "Password#1"
+    force_basic_auth: yes
+    validate_certs: False
+    status_code:
+      - 200
+      - 201
+      - 202
+  register: msg
+- debug:
+    var: msg.json
+
+- name: "Create New MDM Cluster"
+  uri:
+    url: https://10.237.198.170/api/instances/System/action/createMdmCluster
+    method: POST
+    user: admin
+    password: "{{ msg.json }}"
+    body: {"mdmIp":"192.168.10.201", "ips":["192.168.10.201", "192.168.11.201"], "name":"terraform-SIOSVM1"} 
+    force_basic_auth: yes
+    body_format: json
+    validate_certs: False
+    status_code:
+      - 200
+      - 201
+      - 202
+
+- name: "Add Standby MDM to cluster"
+  uri:
+    url: https://10.237.198.170/api/instances/System/action/addStandbyMdm
+    method: POST
+    user: admin
+    password: "{{ msg.json }}"
+    body: {"ips":["192.168.10.202", "192.168.11.202"],"name":"terraform-SIOSVM2","role":"Manager"} 
+    force_basic_auth: yes
+    body_format: json
+    validate_certs: False
+    status_code:
+      - 200
+      - 201
+      - 202
+
+- name: "Add Standby MDM to cluster"
+  uri:
+    url: https://10.237.198.170/api/instances/System/action/addStandbyMdm
+    method: POST
+    user: admin
+    password: "{{ msg.json }}"
+    body: {"ips":["192.168.10.203", "192.168.11.203"],"name":"terraform-SIOSVM3","role":"TieBreaker"} 
+    force_basic_auth: yes
+    body_format: json
+    validate_certs: False
+    status_code:
+      - 200
+      - 201
+      - 202
+
+#- name: "Create New MDM Cluster"
+#  shell: scli --create_mdm_cluster --master_mdm_ip 192.168.10.201 --master_mdm_management_ip 10.237.198.171 --master_mdm_name terraform-SIOSVM1 --accept_license --approve_certificate
+#  ignore_errors: yes
+
+#- name: "Log into Cluster"
+#  shell: scli --login --username admin --password admin
+#  ignore_errors: yes
+
+#- name: "Change Password"
+#  shell: scli --set_password --old_password admin --new_password Password#1
+#  ignore_errors: yes
+
+#- name: "Log into Cluster with new Password"
+#  shell: scli --login --username admin --password Password#1
+
+#- name: "Add Standby MDM to Cluster"
+#  shell: scli --add_standby_mdm --new_mdm_ip 192.168.10.202 --mdm_role manager --new_mdm_management_ip 10.237.198.172  --new_mdm_name terraform-SIOSVM2
+#  ignore_errors: yes
+
+#- name: "Add TieBreaker to Cluster"
+#  shell: scli --add_standby_mdm --new_mdm_ip 192.168.10.203 --mdm_role tb --new_mdm_name terraform-SIOSVM3
+#  ignore_errors: yes
+
+#- name: "Switch to 3 node cluster mode"
+#  shell: scli --switch_cluster_mode --cluster_mode 3_node --add_slave_mdm_name terraform-SIOSVM2 --add_tb_name terraform-SIOSVM3
+#  ignore_errors: yes
+
+#- name: "Create Protection Domain PD1"   
+#  shell: scli --add_protection_domain --protection_domain_name pd1
+
+#- name: "Create Storage Pool SP1"
+#  shell: scli --add_storage_pool --protection_domain_name pd1 --storage_pool_name sp1
+
+
