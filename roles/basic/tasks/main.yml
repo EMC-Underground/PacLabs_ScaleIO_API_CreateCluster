@@ -1,6 +1,43 @@
+- name: "Create New MDM Cluster"
+  shell: scli --create_mdm_cluster --master_mdm_ip 192.168.10.201,192.168.11.201 --master_mdm_management_ip 10.237.198.171 --master_mdm_name terraform-SIOSVM1 --accept_license --approve_certificate
+  ignore_errors: yes
+
 - name: "Get ScaleIO token for Auth"
   uri:
     url: https://10.237.198.170/api/login 
+    return_content: yes
+    user: admin
+    password: "admin"
+    force_basic_auth: yes
+    validate_certs: False
+    status_code:
+      - 200
+      - 201
+      - 202
+  register: msg
+  ignore_errors: yes
+- debug:
+    var: msg.json
+
+- name: "Change Admin Password"
+  uri:
+    url: https://10.237.198.170/api/instances/User/action/setPassword
+    method: POST
+    user: admin
+    password: "{{ msg.json }}"
+    body: {"oldPassword":"admin", "newPassword":"Password#1"}
+    force_basic_auth: yes
+    body_format: json
+    validate_certs: False
+    status_code:
+      - 200
+      - 201
+      - 202
+  ignore_errors: yes
+
+- name: "Get ScaleIO token for Auth"
+  uri:
+    url: https://10.237.198.170/api/login
     return_content: yes
     user: admin
     password: "Password#1"
@@ -13,21 +50,6 @@
   register: msg
 - debug:
     var: msg.json
-
-- name: "Create New MDM Cluster"
-  uri:
-    url: https://10.237.198.170/api/instances/System/action/createMdmCluster
-    method: POST
-    user: admin
-    password: "{{ msg.json }}"
-    body: {"mdmIp":"192.168.10.201", "ips":["192.168.10.201", "192.168.11.201"], "name":"terraform-SIOSVM1"} 
-    force_basic_auth: yes
-    body_format: json
-    validate_certs: False
-    status_code:
-      - 200
-      - 201
-      - 202
 
 - name: "Add Standby MDM to cluster"
   uri:
@@ -43,8 +65,9 @@
       - 200
       - 201
       - 202
+  ignore_errors: yes
 
-- name: "Add Standby MDM to cluster"
+- name: "Add TieBreaker MDM to cluster"
   uri:
     url: https://10.237.198.170/api/instances/System/action/addStandbyMdm
     method: POST
@@ -58,6 +81,56 @@
       - 200
       - 201
       - 202
+  ignore_errors: yes
+
+
+- name: "Query MDM Cluster to get Ids"
+  uri:
+    url: https://10.237.198.170/api/instances/System/queryMdmCluster
+    return_content: yes
+    method: POST
+    body: {}
+    body_format: json
+    validate_certs: False
+    status_code:
+      - 200
+      - 201
+      - 202
+  register: output
+
+- debug:
+    var: output.json.standbyMDMs[0].id
+
+- debug:
+    var: output.json.standbyMDMs[1].id
+
+
+- name: "Change to 3 node cluster"
+  uri:
+    url: https://10.237.198.170/api/instances/System/action/switchClusterMode
+    method: POST
+    user: admin
+    password: "{{ msg.json }}"
+    body: {"mode":"ThreeNodes","addSlaveMdmIdList":["{{ output.json.standbyMDMs[0].id }}"],"addTBIdList":["{{ output.json.standbyMDMs [1].id }}"]} 
+    force_basic_auth: yes
+    body_format: json
+    validate_certs: False
+    status_code:
+      - 200
+      - 201
+      - 202
+  ignore_errors: yes
+
+
+
+
+
+
+
+
+
+
+
 
 #- name: "Create New MDM Cluster"
 #  shell: scli --create_mdm_cluster --master_mdm_ip 192.168.10.201 --master_mdm_management_ip 10.237.198.171 --master_mdm_name terraform-SIOSVM1 --accept_license --approve_certificate
