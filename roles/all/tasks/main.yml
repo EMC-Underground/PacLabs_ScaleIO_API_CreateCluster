@@ -77,7 +77,6 @@
       - 200
       - 201
       - 202
-  ignore_errors: yes
 
 - name: "Add TieBreaker MDM to cluster"
   uri:
@@ -93,7 +92,6 @@
       - 200
       - 201
       - 202
-  ignore_errors: yes
 
 
 - name: "Query MDM Cluster to get Ids"
@@ -142,6 +140,5 @@
       - 200
       - 201
       - 202
-  ignore_errors: yes
 
 
