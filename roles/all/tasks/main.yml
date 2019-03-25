@@ -9,7 +9,7 @@
 
 
 - name: "Create New MDM Cluster"
-  shell: 'scli --create_mdm_cluster --master_mdm_ip {{ vxflex_mdm_ip }} --master_mdm_management_ip {{ vxflex_mdm_mgmt_ip }} --master_mdm_name {{ vxflex_master_mdm_name }} --accept_license --approve_certificate'
+  shell: 'scli --create_mdm_cluster --master_mdm_ip {{ vxflex_master_mdm_ip | join(",") }} --master_mdm_management_ip {{ vxflex_master_mdm_mgmt_ip | join(",") }} --master_mdm_name {{ vxflex_master_mdm_name }} --accept_license --approve_certificate'
   register: results
   when: "cluster_results.rc == 7"
 
@@ -35,7 +35,7 @@
     url: https://{{ vxflex_gateway_ip }}/api/instances/User/action/setPassword
     method: POST
     user: "{{ vxflex_gateway_username }}"
-    password: "{{ msg.json }}"
+    password: "{{ basic_auth.json }}"
     body: {"oldPassword":"{{ vxflex_gateway_username }}", "newPassword":"{{ vxflex_gateway_pw }}"}
     force_basic_auth: yes
     body_format: json
@@ -62,6 +62,13 @@
       - 202
   register: msg
 
+- name: print the stuff
+  debug:
+    msg: "to_json {{ vxflex_master_mdm_ip | to_json }}"
+
+- name: print the other stuff
+  debug:
+    msg: "no to_json {{ vxflex_master_mdm_ip }}"
 
 - name: "Add Standby MDM to cluster"
   uri:
@@ -69,7 +76,7 @@
     method: POST
     user: "{{ vxflex_gateway_username }}"
     password: "{{ msg.json }}"
-    body: {"ips":["{{ vxflex_standby_mdm_ip.ip1 }}","{{ vxflex_standby_mdm_ip.ip2 }}"],"managementIps":["{{ vxflex_standby_mdm_mgmt_ip }}"],"name":"{{ vxflex_standby_mdm_name }}","role":"Manager"}
+    body: {"ips": "{{ vxflex_standby_mdm_ip }}","managementIps":"{{ vxflex_standby_mdm_mgmt_ip }}","name":"{{ vxflex_standby_mdm_name }}","role":"Manager"}
     force_basic_auth: yes
     body_format: json
     validate_certs: False
@@ -77,6 +84,7 @@
       - 200
       - 201
       - 202
+      - 500
 
 - name: "Add TieBreaker MDM to cluster"
   uri:
@@ -84,7 +92,7 @@
     method: POST
     user: "{{ vxflex_gateway_username }}"
     password: "{{ msg.json }}"
-    body: {"ips":["{{ vxflex_tiebreaker_mdm_ip.ip1 }}","{{ vxflex_tiebreaker_mdm_ip.ip2 }}"],"managementIps":["{{ vxflex_tiebreaker_mdm_mgmt_ip }}"],"name":"{{ vxflex_tiebreaker_mdm_name }}","role":"TieBreaker"}
+    body: {"ips":"{{ vxflex_tiebreaker_mdm_ip }}","managementIps":"{{ vxflex_tiebreaker_mdm_mgmt_ip }}","name":"{{ vxflex_tiebreaker_mdm_name }}","role":"TieBreaker"}
     force_basic_auth: yes
     body_format: json
     validate_certs: False
@@ -140,5 +148,3 @@
       - 200
       - 201
       - 202
-
-
