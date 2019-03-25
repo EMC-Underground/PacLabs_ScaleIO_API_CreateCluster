@@ -2,3 +2,4 @@
 /.blackbox/pubring.kbx~
 /.blackbox/secring.gpg
 /roles/all/vars/vars.yml
+playbook.retry
