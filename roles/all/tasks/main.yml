@@ -62,14 +62,6 @@
       - 202
   register: msg
 
-- name: print the stuff
-  debug:
-    msg: "to_json {{ vxflex_master_mdm_ip | to_json }}"
-
-- name: print the other stuff
-  debug:
-    msg: "no to_json {{ vxflex_master_mdm_ip }}"
-
 - name: "Add Standby MDM to cluster"
   uri:
     url: https://{{ vxflex_gateway_ip }}/api/instances/System/action/addStandbyMdm
@@ -115,36 +107,3 @@
       - 201
       - 202
   register: output
-
-- debug:
-    var: output.json.standbyMDMs[0].id
-
-- debug:
-    var: output.json.standbyMDMs[1].id
-
-
-
-- name: "Query to see if cluster is set at 3 node"
-  expect:
-    command: scli --query_cluster
-    responses:
-      "Press 'y' to approve this certificate and add it to the truststore": "y"
-  register: cluster_results
-  failed_when: not (cluster_results.rc == 0 or cluster_results.rc == 7)
-  changed_when: not (cluster_results.rc == 0 or cluster_results.rc == 7)
-
-
-- name: "Change to 3 node cluster"
-  uri:
-    url: https://{{ vxflex_gateway_ip }}/api/instances/System/action/switchClusterMode
-    method: POST
-    user: "{{ vxflex_gateway_username }}"
-    password: "{{ msg.json }}"
-    body: {"mode":"ThreeNodes","addSlaveMdmIdList":["{{ output.json.standbyMDMs[0].id }}"],"addTBIdList":["{{ output.json.standbyMDMs [1].id }}"]}
-    force_basic_auth: yes
-    body_format: json
-    validate_certs: False
-    status_code:
-      - 200
-      - 201
-      - 202
